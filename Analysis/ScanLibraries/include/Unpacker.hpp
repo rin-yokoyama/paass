@@ -38,6 +38,12 @@ class Unpacker{
 	/// Destructor.
 	virtual ~Unpacker();
 
+	/** Clear all events in the raw event list. WARNING! This method will delete all events in the
+	  * event list. This could cause seg faults if the events are used elsewhere.
+	  * \return Nothing.
+	  */	
+	void ClearRawEvent();
+	
 	/// Return the maximum module read from the input file.
 	size_t GetMaxModule(){ return eventList.size(); }
 
@@ -181,12 +187,6 @@ class Unpacker{
 	  */	
 	void ClearEventList();
 
-	/** Clear all events in the raw event list. WARNING! This method will delete all events in the
-	  * event list. This could cause seg faults if the events are used elsewhere.
-	  * \return Nothing.
-	  */	
-	void ClearRawEvent();
-	
 	/** Get the minimum channel time from the event list.
 	  * \param[out] time The minimum time from the event list in system clock ticks.
 	  * \return True if the event list is not empty and false otherwise.
