@@ -1093,12 +1093,8 @@ void Poll::CommandControl(){
 				
 					ParameterChannelWriter writer;
 					bool error = false;
-					for (int mod = modStart; mod <= modStop; mod++) {
-						for (int ch = chStart; ch <= chStop; ch++) {
-							if(forChannel(pif, mod, ch, writer, make_pair(arguments.at(2), value))){ 
-								error = true;
-							}
-						}
+					if(forChannel(pif, modStart, modStop, chStart, chStop, writer, make_pair(arguments.at(2), value))){ 
+						error = true;
 					}
 					if (!error) pif->SaveDSPParameters();
 				}
@@ -1135,13 +1131,9 @@ void Poll::CommandControl(){
 					}
 
 					ParameterModuleWriter writer;
-					bool error = false;
-					for (int mod = modStart; mod <= modStop; mod++) {
-						if(!forModule(pif, mod, writer, make_pair(arguments.at(1), value))){
-							error = true;
-						}
+					if(!forModule(pif, modStart, modStop, writer, make_pair(arguments.at(1), value))){
+						pif->SaveDSPParameters();
 					}
-					if (!error) pif->SaveDSPParameters();
 				}
 				else{
 					std::cout << sys_message_head << "Invalid number of parameters to pmwrite\n";
@@ -1170,11 +1162,7 @@ void Poll::CommandControl(){
 					}
 
 					ParameterChannelReader reader;
-					for (int mod = modStart; mod <= modStop; mod++) { 
-						for (int ch = chStart; ch <= chStop; ch++) { 
-							forChannel(pif, mod, ch, reader, arguments.at(2));
-						}
-					}
+					forChannel(pif, modStart, modStop, chStart, chStop, reader, arguments.at(2));
 				}
 				else{
 					std::cout << sys_message_head << "Invalid number of parameters to pread\n";
@@ -1191,9 +1179,7 @@ void Poll::CommandControl(){
 					}
 				
 					ParameterModuleReader reader;
-					for (int mod = modStart; mod <= modStop; mod++) {
-						forModule(pif, mod, reader, arguments.at(1));
-					}
+					forModule(pif, modStart, modStop, reader, arguments.at(1));
 				}
 				else{
 					std::cout << sys_message_head << "Invalid number of parameters to pmread\n";
@@ -1215,11 +1201,9 @@ void Poll::CommandControl(){
 				}
 
 				OffsetAdjuster adjuster;
-				bool error = false;
-				for (int mod = modStart; mod <= modStop; mod++) {
-					if(!forModule(pif, mod, adjuster, 0)){ error = true; }
+				if(!forModule(pif, modStart, modStop, adjuster, 0)) { 
+					pif->SaveDSPParameters();
 				}
-				if (!error) pif->SaveDSPParameters();
 			}
 			else{
 				std::cout << sys_message_head << "Invalid number of parameters to adjust_offsets\n";
@@ -1269,12 +1253,8 @@ void Poll::CommandControl(){
 				
 				std::string dum_str = "CHANNEL_CSRA";
 				bool error = false;
-				for (int mod = modStart; mod <= modStop; mod++) {
-					for (int ch = chStart; ch <= chStop; ch++) {
-						if(!forChannel(pif, mod, ch, flipper, dum_str)){
-							error = true;
-						}
-					}
+				if(!forChannel(pif, modStart, modStop, chStart, chStop, flipper, dum_str)){
+					error = true;
 				}
 				if (!error) pif->SaveDSPParameters();
 			}
