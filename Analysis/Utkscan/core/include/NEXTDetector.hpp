@@ -61,14 +61,16 @@ public:
     }
 
     bool GetHasEvent(void) const{
-	return (GetHasEventPosition() && GetHasEventTiming() ) ;
+    // std::cout<<GetLeftSide().GetTrace().HasValidAnalysis()<<"  "<<GetLeftSide().GetTrace().GetPhase()<<std::endl;
+	//return (GetHasEventPosition() && GetHasEventTiming() ) ;
+	return ( GetHasEventTiming() ) ;
     }
 
     /** \return the flight path of the particle to the detector */
     double GetFlightPath(void) const {
 //        if (GetType() == "small")
-            return (sqrt( ( GetCalibration().GetZ0() + GetAverageZPos() * 24.0 ) *
-                          ( GetCalibration().GetZ0() + GetAverageZPos() * 24.0 ) +
+            return (sqrt( ( GetCalibration().GetZ0() + GetAvgZPos() * 24.0 ) *
+                          ( GetCalibration().GetZ0() + GetAvgZPos() * 24.0 ) +
                          pow(Globals::get()->GetNEXTSpeedOfLightInCmPerNs() *
                              0.5 * GetTimeDifference() +
                              GetCalibration().GetXOffset(), 2) 
@@ -79,6 +81,12 @@ public:
     /** \return the position independent qdc for the bar */
     double GetQdc() const {
         return (sqrt(right_.GetTraceQdc() * left_.GetTraceQdc()));
+    }
+    double GetlQdc() const {
+        return (left_.GetTraceQdc());
+    }
+    double GetrQdc() const {
+        return (right_.GetTraceQdc());
     }
     double GetLpsd() const{
         return left_.GetDiscrimination();
@@ -157,15 +165,40 @@ public:
                 GetCalibration().GetLeftRightTimeOffset());
     }
 
-    /** \return the average high resolution X position */
-    double GetAverageZPos() const {
+    /** \return the average high resolution Z position */
+    double GetAvgZPos() const {
         return ( aright_.GetHighResZPos() + aleft_.GetHighResZPos() ) / 2.0;
     }
 
-    /**  \return the average high resolution Y position */
-    double GetAverageYPos() const {
+    /** \return the average high resolution Y position */
+    double GetAvgYPos() const {
         return ( aright_.GetHighResYPos() + aleft_.GetHighResYPos() ) / 2.0;
     }
+
+    /** \return the average high resolution Z position from Pixie Filter */
+    double GetAvgFilterZPos() const {
+        //return -0.5;
+        return ( aright_.GetFilterZPos() + aleft_.GetFilterZPos() ) / 2.0;
+    }
+
+    /** \return the average high resolution Y position from Pixie Filter */
+    double GetAvgFilterYPos() const {
+        //return -0.5;
+        return ( aright_.GetFilterYPos() + aleft_.GetFilterYPos() ) / 2.0;
+    }
+
+    /** \return the average high resolution Z position from Pixie QDC*/
+    double GetAvgQdcZPos() const {
+        //return 0.5;
+        return ( aright_.GetPixieQdcZPos() + aleft_.GetPixieQdcZPos() ) / 2.0;
+    }
+
+    /** \return the average high resolution Y position from Pixie QDC */
+    double GetAvgQdcYPos() const {
+        //return 0.5;
+        return ( aright_.GetPixieQdcYPos() + aleft_.GetPixieQdcYPos() ) / 2.0;
+    }
+
 
     double GetFT() const {
         return ( GetLeftPos().GetFTQdc() + GetRightPos().GetFTQdc() );

@@ -432,10 +432,10 @@ namespace TraceFunctions {
             throw range_error(msg.str());
         }
 
-        if (qdc == 0)
-            throw range_error("TraceFunctions::CalculateTailRatio - The QDC "
-                                      "had a value of zero. This will cause "
-                                      "issues.");
+        // if (qdc == 0)
+            // throw range_error("TraceFunctions::CalculateTailRatio - The QDC "
+                                    //   "had a value of zero. This will cause "
+                                    //   "issues.");
 
         return Statistics::CalculateIntegral(
                 vector<T>(data.begin() + range.first,

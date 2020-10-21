@@ -10,9 +10,11 @@
  */
 #include <fstream>
 #include <iostream>
-
+#include "XiaData.hpp"
 #include <cmath>
-
+#include "DetectorDriver.hpp"
+#include "DetectorLibrary.hpp"
+#include "HelperFunctions.hpp"
 #include "BarBuilder.hpp"
 #include "NEXTBuilder.hpp"
 #include "DammPlotIds.hpp"
@@ -20,7 +22,7 @@
 #include "RawEvent.hpp"
 #include "TimingMapBuilder.hpp"
 #include "NEXTProcessor.hpp"
-
+//double toff[5] = {0.0293525, -0.1736, 0.1643, 8.1338, -0.48114};
 namespace dammIds {
     namespace next {
         const unsigned int DEBUGGING_OFFSET = 60;//!< Offset for debugging hists
@@ -107,6 +109,9 @@ bool NEXTProcessor::PreProcess(RawEvent &event) {
     static const vector<ChanEvent *> &dEvents = event.GetSummary("next:dynode")->GetList();
     static const vector<ChanEvent *> &aEvents = event.GetSummary("next:anode")->GetList();
 
+    numDyn = dEvents.size();
+    numAnd = aEvents.size();
+
     if (dEvents.empty() || dEvents.size() < 2) {
         if (dEvents.empty())
             plot(D_DEBUGGING, 27);
@@ -119,7 +124,7 @@ bool NEXTProcessor::PreProcess(RawEvent &event) {
     if (aEvents.empty () || aEvents.size() < 8){
         return false;
     }
-
+//	cout << dEvents.size() << " dynodes in event. " << aEvents.size() << " anodes in event" << endl;
     NEXTBuilder sMod(dEvents,aEvents);
     sMod.BuildModules();
     mods_ = sMod.GetNEXTMap();
@@ -169,28 +174,61 @@ bool NEXTProcessor::Process(RawEvent &event) {
     RDecay_=false;
     if (LIonVeto.empty() && IondE.empty()){
     RDecay_=true;
+    
     }
+  /* static const auto &Events = event.GetSummary("next",true)->GetList();
+      for (auto it = Events.begin(); it != Events.end(); it++) {
+                    nexts.RawTime = (*it)->GetTimeSansCfd() * Globals::get()->GetClockInSeconds() * 1e9;
+         
+                    } */
 
     for (NEXTMap::iterator it = mods_.begin(); it != mods_.end(); it++) {
         TimingDefs::TimingIdentifier modId = (*it).first;
         NEXTDetector mod = (*it).second;
 
-        if (!mod.GetHasEvent())
-            continue;
+      /* static const auto &Events = event.GetSummary("next",true)->GetList();
+     for (auto it = Events.begin(); it != Events.end(); it++) {
+                 nexts.lRawTime = mod.GetLeftSide().GetTimeSansCfd() * Globals::get()->GetClockInSeconds() * 1e9;
+                 nexts.rRawTime = mod.GetRightSide().GetTimeSansCfd() * Globals::get()->GetClockInSeconds() * 1e9;      
+         
+                   } */
 
+        if (!mod.GetHasEvent()){
+	// cout << "ModNum " << modId.first << "  Builder Failed. Timing: "<< mod.GetHasEventTiming() << ", Position: " << mod.GetHasEventPosition() << "\n";
+	// cout << "Dynodes: " << numDyn << ", Anodes: " << numAnd << endl;
+	 continue;
+	}
+// cout << "ModNum " << modId.first << "  Builder Succeded. Timing: "<< mod.GetHasEventTiming() << ", Position: " << mod.GetHasEventPosition() << "\n";
         if (!doubleBetaStarts.empty())
-            AnalyzeModStarts(mod, modId.first);
-        else
+            AnalyzeBarStarts(mod, modId.first);
+        else if(!betaStarts.empty())
             AnalyzeStarts(mod, modId.first);
-
+        else 
+            FillPairWise(mod, modId.first);
+        
     }
+
+  //  for (BarMap::iterator itStart = barStarts_.begin(); itStart != barStarts_.end(); itStart++) {
+    
+       //     unsigned int startLoc = (*itStart).first.first;
+    //        BarDetector start = (*itStart).second;
+
+  // static const auto &Events = event.GetSummary("beta_scint",true)->GetList();
+    //  for (auto it = Events.begin(); it != Events.end(); it++) {
+         //        nexts.sRawTime = start.GetTimeSansCfd() * Globals::get()->GetClockInSeconds() * 1e9;    
+         
+             //       } 
+
+
+   // } 
 
     EndProcess();
     return true;
 }
 
-void NEXTProcessor::AnalyzeModStarts(const NEXTDetector &mod, unsigned int &modLoc) {
+void NEXTProcessor::AnalyzeBarStarts(const NEXTDetector &mod, unsigned int &modLoc) {
         for (BarMap::iterator itStart = barStarts_.begin(); itStart != barStarts_.end(); itStart++) {
+    
             unsigned int startLoc = (*itStart).first.first;
             BarDetector start = (*itStart).second;
 
@@ -204,27 +242,57 @@ void NEXTProcessor::AnalyzeModStarts(const NEXTDetector &mod, unsigned int &modL
 
             if (DetectorDriver::get()->GetSysRootOutput()){
                 //Fill Root struct
-                nexts.sNum = startLoc;
-                nexts.sTime = start.GetTimeAverage();
-                nexts.sQdc = start.GetQdc();
+                    nexts.tof    = tof;
+                    nexts.corTof = corTof;
+                    nexts.qdcPos = mod.GetQdcPosition();
+                    nexts.phaseL = mod.GetLeftSide().GetPhaseInNs();
+                    nexts.phaseR = mod.GetRightSide().GetPhaseInNs();
+                    nexts.Zpos   = mod.GetAvgZPos();
+                    nexts.Ypos   = mod.GetAvgYPos();
+                    nexts.qdc    = mod.GetQdc();
+                    nexts.aqdc   = mod.GetAnodeQdc();
+                    nexts.modNum = modLoc;
+                    nexts.psd = mod.Getpsd();
+                    nexts.tdiff  = mod.GetTimeDifference();
+                    nexts.sNum   = startLoc;
+                    nexts.sQdc   = start.GetQdc();
+                  //  nexts.sTime  = start.GetTimeSansCfd();
 
-                //nexts.Zpos = -1.0;
-                //nexts.Ypos = 1.0;
-                nexts.Zpos = mod.GetAverageZPos();
-                nexts.Ypos = mod.GetAverageYPos();
-                //nexts.goodPos = mod.GetHasEventPosition();
-                nexts.qdc = mod.GetQdc();
-                nexts.modNum = modLoc;
+#ifdef PAASS_EXTENDED_ROOT_OUTPUT
+                    nexts.slMax   = start.GetLeftSide().GetMaximumValue();
+                    nexts.slSdBase = start.GetLeftSide().GetStdDevBaseline();
+                    nexts.slAveBase = start.GetLeftSide().GetAveBaseline();
+                    nexts.srMax   = start.GetRightSide().GetMaximumValue();
+                    nexts.srSdBase = start.GetRightSide().GetStdDevBaseline();
+                    nexts.srAveBase = start.GetRightSide().GetAveBaseline();
+                  //  nexts.sRawTime = start.GetTimeSansCfd() * Globals::get()->GetClockInSeconds() * 1e9;
+                  //  nexts.lRawTime = mod.GetLeftSide().GetTimeSansCfd() * Globals::get()->GetClockInSeconds() * 1e9;
+                  //  nexts.rRawTime = mod.GetRightSide().GetTimeSansCfd() * Globals::get()->GetClockInSeconds() * 1e9;
 
-                nexts.tdiff = mod.GetTimeDifference();
-                nexts.tof = tof;
-                nexts.corTof = corTof;
-                nexts.phaseL = mod.GetLeftSide().GetPhaseInNs();
-                nexts.phaseR = mod.GetRightSide().GetPhaseInNs();
-                nexts.qdcPos = mod.GetQdcPosition();
+                    nexts.Lpsd = mod.GetLpsd();
+                    nexts.Rpsd = mod.GetRpsd();
+                    nexts.lMax = mod.GetlMax();
+                    nexts.rMax = mod.GetrMax();
+                    nexts.lMaxPos = mod.GetlMaxPos();
+                    nexts.rMaxPos = mod.GetrMaxPos();
+                    nexts.lAveBase = mod.GetlAveBase();
+                    nexts.rAveBase = mod.GetrAveBase();
+                    nexts.lSdBase = mod.GetlSdBase();
+                    nexts.rSdBase = mod.GetrSdBase();
+                    nexts.ftqdc  = mod.GetFT();
+                    nexts.fbqdc  = mod.GetFB();
+                    nexts.btqdc  = mod.GetBT();
+                    nexts.bbqdc  = mod.GetBB();
+
+                    nexts.FZpos  = mod.GetAvgFilterZPos();
+                    nexts.FYpos  = mod.GetAvgFilterYPos();
+                    nexts.QZpos  = mod.GetAvgQdcZPos();
+                    nexts.QYpos  = mod.GetAvgQdcYPos();
+                    //nexts.goodPos = mod.GetHasEventPosition();
+#endif /* PAASS_EXTENDED_ROOT_OUTPUT */
 
                 pixie_tree_event_->next_vec_.emplace_back(nexts);
-                nexts = processor_struct::NEXTS_DEFAULT_STRUCT;
+                nexts = processor_struct::NEXT_DEFAULT_STRUCT;
             }
         }
 }
@@ -248,17 +316,39 @@ void NEXTProcessor::AnalyzeStarts(const NEXTDetector &mod, unsigned int &modLoc)
 
                 //if (tof>= tofcut_ && mod.GetQdc()>qdcmin_) {
                     //Fill Root struct
+                    nexts.tof    = tof;
+                    nexts.corTof = corTof;
+                    nexts.qdcPos = mod.GetQdcPosition();
+                    nexts.phaseL = mod.GetLeftSide().GetPhaseInNs();
+                    nexts.phaseR = mod.GetRightSide().GetPhaseInNs();
+                    nexts.Zpos   = mod.GetAvgZPos();
+                    nexts.Ypos   = mod.GetAvgYPos();
+                    nexts.qdc    = mod.GetQdc();
+                    nexts.aqdc   = mod.GetAnodeQdc();
+                    nexts.modNum = modLoc;
+                    nexts.psd = mod.Getpsd();
+                    nexts.tdiff  = mod.GetTimeDifference();
                     nexts.sNum   = startLoc;
                     nexts.sTime  = start.GetTimeSansCfd();
                     nexts.sQdc   = start.GetTraceQdc();
+                  
+#ifdef PAASS_EXTENDED_ROOT_OUTPUT
                     nexts.sMax   = start.GetMaximumValue();
                     nexts.sSdBase = start.GetStdDevBaseline();
                     nexts.sAveBase = start.GetAveBaseline();
+                    nexts.sRawTime = start.GetTimeSansCfd() * Globals::get()->GetClockInSeconds() * 1e9;
+                   // cout<<mod.GetLeftSide().GetTimeSansCfd() * Globals::get()->GetClockInSeconds() * 1e9<<endl;
                     
-                    nexts.qdc    = mod.GetQdc();
+                    nexts.lRawTime = mod.GetLeftSide().GetTimeSansCfd() * Globals::get()->GetClockInSeconds() * 1e9;
+                    nexts.rRawTime = mod.GetRightSide().GetTimeSansCfd() * Globals::get()->GetClockInSeconds() * 1e9;
+                    nexts.sHRT = start.GetHighResTimeInNs();
+                    nexts.lHRT = mod.GetLeftSide().GetHighResTimeInNs();
+                    nexts.rHRT = mod.GetRightSide().GetHighResTimeInNs();
+                   // cout<<nexts.rHRT<<endl;
+                    nexts.lqdc    = mod.GetlQdc();
+                    nexts.rqdc    = mod.GetrQdc();
                     nexts.Lpsd = mod.GetLpsd();
                     nexts.Rpsd = mod.GetRpsd();
-                    nexts.psd = mod.Getpsd();
                     nexts.lMax = mod.GetlMax();
                     nexts.rMax = mod.GetrMax();
                     nexts.lMaxPos = mod.GetlMaxPos();
@@ -267,28 +357,72 @@ void NEXTProcessor::AnalyzeStarts(const NEXTDetector &mod, unsigned int &modLoc)
                     nexts.rAveBase = mod.GetrAveBase();
                     nexts.lSdBase = mod.GetlSdBase();
                     nexts.rSdBase = mod.GetrSdBase();
-                    nexts.aqdc   = mod.GetAnodeQdc();
-                    nexts.modNum = modLoc;
-                    nexts.tdiff  = mod.GetTimeDifference();
                     nexts.ftqdc  = mod.GetFT();
                     nexts.fbqdc  = mod.GetFB();
                     nexts.btqdc  = mod.GetBT();
                     nexts.bbqdc  = mod.GetBB();
 
-                    nexts.Zpos   = mod.GetAverageZPos();
-                    nexts.Ypos   = mod.GetAverageYPos();
+                    nexts.FZpos  = mod.GetAvgFilterZPos();
+                    nexts.FYpos  = mod.GetAvgFilterYPos();
+                    nexts.QZpos  = mod.GetAvgQdcZPos();
+                    nexts.QYpos  = mod.GetAvgQdcYPos();
+                    nexts.qdcPos    = mod.GetQdcPosition();
                     //nexts.goodPos = mod.GetHasEventPosition();
-                    nexts.tof    = tof;
-                    nexts.corTof = corTof;
-                    nexts.phaseL = mod.GetLeftSide().GetPhaseInNs();
-                    nexts.phaseR = mod.GetRightSide().GetPhaseInNs();
-                    nexts.qdcPos = mod.GetQdcPosition();
-
+#endif /* PAASS_EXTENDED_ROOT_OUTPUT */
                     pixie_tree_event_->next_vec_.emplace_back(nexts);
-                    nexts = processor_struct::NEXTS_DEFAULT_STRUCT;
+                    nexts = processor_struct::NEXT_DEFAULT_STRUCT;
                 //}
             }
         }
+}
+
+void NEXTProcessor::FillPairWise(const NEXTDetector &mod, unsigned int &modLoc) {
+       
+            if (DetectorDriver::get()->GetSysRootOutput()){
+              
+                    nexts.phaseL = mod.GetLeftSide().GetPhaseInNs();
+                    nexts.phaseR = mod.GetRightSide().GetPhaseInNs();
+                    nexts.qdc    = mod.GetQdc();
+                    nexts.Zpos   = mod.GetAvgZPos();
+                    nexts.Ypos   = mod.GetAvgYPos();
+                    nexts.aqdc   = mod.GetAnodeQdc();
+                    nexts.modNum = modLoc;
+                    nexts.tdiff  = mod.GetTimeDifference();
+                    nexts.psd = mod.Getpsd();
+
+#ifdef PAASS_EXTENDED_ROOT_OUTPUT
+                    nexts.lRawTime = mod.GetLeftSide().GetTimeSansCfd() * Globals::get()->GetClockInSeconds() * 1e9;
+                    nexts.rRawTime = mod.GetRightSide().GetTimeSansCfd() * Globals::get()->GetClockInSeconds() * 1e9;
+                    nexts.qdcPos    = mod.GetQdcPosition();
+                    nexts.lqdc    = mod.GetlQdc();
+                    nexts.rqdc    = mod.GetrQdc();
+                    nexts.Lpsd = mod.GetLpsd();
+                    nexts.Rpsd = mod.GetRpsd();
+                    nexts.lMax = mod.GetlMax();
+                    nexts.rMax = mod.GetrMax();
+                    nexts.lMaxPos = mod.GetlMaxPos();
+                    nexts.rMaxPos = mod.GetrMaxPos();
+                    nexts.lAveBase = mod.GetlAveBase();
+                    nexts.rAveBase = mod.GetrAveBase();
+                    nexts.lSdBase = mod.GetlSdBase();
+                    nexts.rSdBase = mod.GetrSdBase();
+                    nexts.ftqdc  = mod.GetFT();
+                    nexts.fbqdc  = mod.GetFB();
+                    nexts.btqdc  = mod.GetBT();
+                    nexts.bbqdc  = mod.GetBB();
+
+                    nexts.FZpos  = mod.GetAvgFilterZPos();
+                    nexts.FYpos  = mod.GetAvgFilterYPos();
+                    nexts.QZpos  = mod.GetAvgQdcZPos();
+                    nexts.QYpos  = mod.GetAvgQdcYPos();
+                    //nexts.goodPos = mod.GetHasEventPosition();
+#endif /* PAASS_EXTENDED_ROOT_OUTPUT */
+
+                    pixie_tree_event_->next_vec_.emplace_back(nexts);
+                    nexts = processor_struct::NEXT_DEFAULT_STRUCT;
+                //}
+            }
+      //  }
 }
 
 void NEXTProcessor::PlotTofHistograms(const double &tof, const double &cortof,const double &NCtof, const double &qdc,

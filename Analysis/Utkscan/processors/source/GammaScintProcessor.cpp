@@ -350,7 +350,7 @@ bool GammaScintProcessor::Process(RawEvent &event) {
             Gsing.rawEnergy = (*it)->GetEnergy();
             Gsing.time = Gtime;
             Gsing.detNum = (*it)->GetChanID().GetLocation();
-            pixie_tree_event_->gamma_scint_vec_.emplace_back(Gsing);
+            pixie_tree_event_->gammascint_vec_.emplace_back(Gsing);
             Gsing = processor_struct::GAMMASCINT_DEFAULT_STRUCT; //reset structure
             //Dont fill because we want 1 pixie event per tree entry, so we add the current structure in the last spot
             //on a vector<> and then reset the structure. and we will at the end or Process()

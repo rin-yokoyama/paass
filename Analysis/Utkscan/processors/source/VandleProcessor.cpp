@@ -206,15 +206,13 @@ void VandleProcessor::AnalyzeBarStarts(const BarDetector &bar, unsigned int &bar
                 vandles.qdc = bar.GetQdc();
                 vandles.barNum = barLoc;
                 vandles.barType = bar.GetType();
-                vandles.tdiff = bar.GetTimeDifference();
+                vandles.tDiff = bar.GetTimeDifference();
                 vandles.tof = tof;
                 vandles.corTof = corTof;
-                vandles.phaseL = bar.GetLeftSide().GetPhaseInNs();
-                vandles.phaseR = bar.GetRightSide().GetPhaseInNs();
                 vandles.qdcPos = bar.GetQdcPosition();
 
                 pixie_tree_event_->vandle_vec_.emplace_back(vandles);
-                vandles = processor_struct::VANDLES_DEFAULT_STRUCT;
+                vandles = processor_struct::VANDLE_DEFAULT_STRUCT;
             }
         }
 }
@@ -245,15 +243,13 @@ void VandleProcessor::AnalyzeStarts(const BarDetector &bar, unsigned int &barLoc
                     vandles.qdc = bar.GetQdc();
                     vandles.barNum = barLoc;
                     vandles.barType = bar.GetType();
-                    vandles.tdiff = bar.GetTimeDifference();
+                    vandles.tDiff = bar.GetTimeDifference();
                     vandles.tof = tof;
                     vandles.corTof = corTof;
-                    vandles.phaseL = bar.GetLeftSide().GetPhaseInNs();
-                    vandles.phaseR = bar.GetRightSide().GetPhaseInNs();
                     vandles.qdcPos = bar.GetQdcPosition();
 
                     pixie_tree_event_->vandle_vec_.emplace_back(vandles);
-                    vandles = processor_struct::VANDLES_DEFAULT_STRUCT;
+                    vandles = processor_struct::VANDLE_DEFAULT_STRUCT;
                 }
             }
         }

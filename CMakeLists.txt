@@ -61,6 +61,11 @@ option(PAASS_USE_DAMM "Use DAMM for MCA" ON)
 option(PAASS_USE_NCURSES "Use ncurses for terminal" ON)
 option(PAASS_USE_ROOT "Use ROOT" ON)
 
+option(PAASS_EXTENDED_ROOT_OUTPUT "Output full branches to the ROOT tree. May increase the file size" OFF)
+if(PAASS_EXTENDED_ROOT_OUTPUT)
+    add_definitions(-DPAASS_EXTENDED_ROOT_OUTPUT)
+endif(PAASS_EXTENDED_ROOT_OUTPUT)
+
 mark_as_advanced(PAASS_USE_NCURSES)
 mark_as_advanced(PAASS_USE_DAMM)
 mark_as_advanced(PAASS_USE_ROOT)
