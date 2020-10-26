@@ -14,7 +14,6 @@ struct BATO {
     double time = -999;
     double energy = -999;
     double qdc = -999;
-    int padNum = -999;
     int detNum = -999;
 };
 static const BATO BATO_DEFAULT_STRUCT;
@@ -25,6 +24,7 @@ struct CLOVER {
     double time = -999;
     int detNum = -999;
     int cloverNum = -999;
+    bool cloverHigh = false;
 };
 
 static const CLOVER CLOVER_DEFAULT_STRUCT;
@@ -135,16 +135,19 @@ struct NEXT {
 };
 static const NEXT NEXT_DEFAULT_STRUCT;
 
+
 struct PID {
     double rfq_time = -999;
     double fp_time = -999;
+    double pinCfd_time = -999;
     double pin_0_time = -999;
     double pin_1_time = -999;
     double pin_0_energy = -999;
     double pin_1_energy = -999;
     double tac_0 = -999;
     double tac_1 = -999;
-    double tof = -999;
+    double tof0 = -999;
+    double tof1 = -999;
 };
 static const PID PID_DEFAULT_STRUCT;
 
@@ -166,6 +169,9 @@ struct ROOTDEV {
     double rawEnergy = -999;
     double timeSansCfd = -999;
     double time = -999;
+    bool cfdForcedBit = false;
+    double cfdFraction = -999;
+    int cfdSourceBit = -999;
     int detNum = -999;   //the instance number of RD in the xml Map
     int modNum = -999;   // the physical module number
     int chanNum = -999;  // the physical channel number
